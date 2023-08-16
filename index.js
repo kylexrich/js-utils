@@ -22,6 +22,8 @@ const writeDirectoryContentsToTextFile = (directoryPath, outputFile) => {
         '.npm',
         '.node_repl_history',
         'build',
+        '.git',
+        '.github',
         '.env',
         'package.json',
         'package-lock.json'
@@ -58,4 +60,56 @@ const writeDirectoryContentsToTextFile = (directoryPath, outputFile) => {
     stream.end();
 }
 
-writeDirectoryContentsToTextFile(input, output);
+
+const printFolderStructureToFile = (directoryPath, outputFile) => {
+    const ignorePatterns = [
+        'node_modules',
+        'dist',
+        '.idea',
+        '.vscode',
+        '.swp',
+        '.DS_Store',
+        'logs',
+        '.log',
+        '.git',
+        '.github',
+        'pids',
+        '.pid',
+        '.seed',
+        '.pid.lock',
+        'typings/',
+        '.npm',
+        '.node_repl_history',
+        'build',
+    ];
+    const stream = fs.createWriteStream(outputFile);
+
+    const shouldIgnore = (filePath) => {
+        const basename = path.basename(filePath);
+        return ignorePatterns.some(pattern => minimatch(basename, pattern));
+    }
+
+    const writeStructure = (filePath, indent = "") => {
+        const relativePath = path.relative(directoryPath, filePath);
+        const stats = fs.statSync(filePath);
+
+        if (shouldIgnore(filePath)) return;
+
+        if (stats.isDirectory()) {
+            stream.write(`${indent}${relativePath}\n`);
+            const files = fs.readdirSync(filePath);
+
+            for (const file of files) {
+                writeStructure(path.join(filePath, file), `${indent}\t`);
+            }
+        } else if (stats.isFile()) {
+            stream.write(`${indent}${relativePath}\n`);
+        }
+    }
+
+    writeStructure(directoryPath);
+    stream.end();
+}
+
+printFolderStructureToFile(input, output);
+//writeDirectoryContentsToTextFile(input, output);
